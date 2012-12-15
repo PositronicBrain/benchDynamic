@@ -8,5 +8,5 @@ Install
 -------
 Issue:
 
-  cabal configure
-  cabal build
+    cabal configure
+    cabal build
