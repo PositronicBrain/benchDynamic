@@ -1,0 +1,21 @@
+name:                benchDynamic
+version:             0.0.1.0
+Author:              Federico Squartini
+Maintainer:          Federico Squartini <federico.squartini@gmail.com>
+Stability:           experimental
+Homepage:            https://github/PositronicBrain/benchDynamic
+build-type:          Simple
+cabal-version:       >=1.8
+Data-Files:          README.md
+description:
+
+  Test the performance of different implementations of
+  dynamic programming.
+
+executable benchDynamic
+  main-is:             benchDynamic.lhs
+  build-depends:       base == 4.6.*, vector == 0.10.*, criterion == 0.6.*,
+                       containers == 0.5.*
+  C-sources:           fib.c
+  CC-Options:          -O2
+  GHC-Options:         -O2  -with-rtsopts=-K200M -fllvm
