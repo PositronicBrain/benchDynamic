@@ -16,8 +16,8 @@
 > import Criterion.Main
 > import Criterion.Config
 
-> import qualified Data.IntMap as I
-> import           Data.IntMap (empty,insert)
+> import qualified Data.IntMap.Strict as I
+> import           Data.IntMap.Strict (empty,insert)
 
 > import qualified Data.Vector as V (generate,unsafeIndex)
 > import           Data.Vector.Generic (unsafeFreeze)
@@ -42,16 +42,12 @@
 
 
 > fibIntmap :: Int -> Int
-> fibIntmap n = fs `deepseq` fs I.! n
->     where
->       fs = foldr (\i -> case i of 
->                           0 -> insert 0 1
->                           1 -> insert 1 1
->                           _ -> insert i $ fs I.! (i-1) + fs I.! (i-2))
->            empty [0..n]
-
-
-
+> fibIntmap n = (I.! n) $ foldl' step empty [0..n]
+>    where
+>      step m 0 = insert 0 1 m
+>      step m 1 = insert 1 1 m
+>      step m i = insert i (m I.! (i-1) + m I.! (i-2)) m
+>      {-# INLINE step #-}
 
 > fibUVector :: Int -> Int
 > fibUVector n = (U.! n) $ runST $ do
@@ -73,8 +69,8 @@
 >       myConfig = defaultConfig {cfgPerformGC = ljust True}
 >   defaultMainWith myConfig (return ()) [
 >         bench ("fib List " ++ show n) $ whnf fibList n,
->         -- bench ("fib IntMap " ++ show n) $ whnf fibIntmap n, -- Stack Overflow
+>         bench ("fib IntMap " ++ show n) $ whnf fibIntmap n,
 >         bench ("fib Vector " ++ show n) $ whnf fibVector n,
->         bench ("fib UVector " ++ show n) $ whnf fibUVector n,
+>         bench ("fib Mutable UVector " ++ show n) $ whnf fibUVector n,
 >         bench ("fib C " ++ show n) $ whnf c_fib (fromIntegral n)
 >         ]
