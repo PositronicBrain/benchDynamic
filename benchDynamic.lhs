@@ -11,7 +11,7 @@
 
 > import Control.Monad (forM_)
 > import Control.Monad.ST
-> import Control.DeepSeq (deepseq)
+> import Control.DeepSeq (deepseq,force)
 
 > import Criterion.Main
 > import Criterion.Config
@@ -27,7 +27,7 @@
 > import Foreign.C.Types
 
 > fibList :: Int -> Int
-> fibList = deepseq fs . (fs !!)
+> fibList n = last $ force (take n fs)
 >     where
 >       fs = 1:1:zipWith (+) fs (tail fs)
 
@@ -66,7 +66,7 @@
 >   let n = 1000000
 >       myConfig = defaultConfig {cfgPerformGC = ljust True}
 >   defaultMainWith myConfig (return ()) [
->         -- bench ("fib List " ++ show n) $ whnf fibList n,
+>         bench ("fib List " ++ show n) $ whnf fibList n,
 >         -- bench ("fib IntMap " ++ show n) $ whnf fibIntmap n,
 >         bench ("fib Vector " ++ show n) $ whnf fibVector n,
 >         bench ("fib UVector " ++ show n) $ whnf fibUVector n,
