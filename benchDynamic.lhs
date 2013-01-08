@@ -11,6 +11,7 @@
 
 > import Control.Monad (forM_)
 > import Control.Monad.ST
+> import Control.DeepSeq (deepseq)
 
 > import Criterion.Main
 > import Criterion.Config
@@ -18,7 +19,7 @@
 > import qualified Data.IntMap as I
 > import           Data.IntMap (empty,insert)
 
-> import           Data.Vector ((!),generate)
+> import qualified Data.Vector as V (generate,unsafeIndex)
 > import           Data.Vector.Generic (unsafeFreeze)
 > import           Data.Vector.Unboxed.Mutable (read,new,write)
 > import qualified Data.Vector.Unboxed as U
@@ -26,22 +27,22 @@
 > import Foreign.C.Types
 
 > fibList :: Int -> Int
-> fibList = (fibs !!)
+> fibList = deepseq fs . (fs !!)
 >     where
->       fibs = 1:1:zipWith (+) fibs (tail fibs)
+>       fs = 1:1:zipWith (+) fs (tail fs)
 
 
 > fibVector :: Int -> Int
-> fibVector n = fs!n
+> fibVector n = deepseq fs (fs `V.unsafeIndex` n)
 >     where
->       fs = generate (n+1) $ \i -> case i of
->                                    0 -> 1
->                                    1 -> 1
->                                    _ -> fs!(i-1) + fs!(i-2)
+>       fs = V.generate (n+1) $ \i -> case i of
+>                                0 -> 1
+>                                1 -> 1
+>                                _ -> fs `V.unsafeIndex` (i-1) + fs `V.unsafeIndex` (i-2)
 
 
 > fibIntmap :: Int -> Int
-> fibIntmap n = fs I.! n
+> fibIntmap n = deepseq fs (fs I.! n)
 >     where
 >       fs = foldr (\i -> insert i $ fs I.! (i-1) + fs I.! (i-2))
 >                  (insert 1 1 $ insert 1 0 empty) [2..]
@@ -65,7 +66,7 @@
 >   let n = 1000000
 >       myConfig = defaultConfig {cfgPerformGC = ljust True}
 >   defaultMainWith myConfig (return ()) [
->         bench ("fib List " ++ show n) $ whnf fibList n,
+>         -- bench ("fib List " ++ show n) $ whnf fibList n,
 >         -- bench ("fib IntMap " ++ show n) $ whnf fibIntmap n,
 >         bench ("fib Vector " ++ show n) $ whnf fibVector n,
 >         bench ("fib UVector " ++ show n) $ whnf fibUVector n,
