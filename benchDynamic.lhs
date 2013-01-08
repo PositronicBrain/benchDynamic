@@ -21,7 +21,7 @@
 
 > import qualified Data.Vector as V (generate,unsafeIndex)
 > import           Data.Vector.Generic (unsafeFreeze)
-> import           Data.Vector.Unboxed.Mutable (read,new,write)
+> import           Data.Vector.Unboxed.Mutable (unsafeRead,new,unsafeWrite)
 > import qualified Data.Vector.Unboxed as U
 
 > import Foreign.C.Types
@@ -50,12 +50,12 @@
 > fibUVector :: Int -> Int
 > fibUVector n = (U.! n) $ runST $ do
 >   fs <- new $ n+1
->   write fs 0 1
->   write fs 1 1
+>   unsafeWrite fs 0 1
+>   unsafeWrite fs 1 1
 >   forM_ [2..n] $ \i -> do
->       a <- read fs $ i-1
->       b <- read fs $ i-2
->       write fs i $ a+b
+>       a <- unsafeRead fs $ i-1
+>       b <- unsafeRead fs $ i-2
+>       unsafeWrite fs i $ a+b
 >   unsafeFreeze fs
 
 
