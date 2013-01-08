@@ -7,7 +7,7 @@
 
 > import Prelude hiding (read)
 > import qualified Prelude as P (read)
-
+> import Data.List (foldl')
 
 > import Control.Monad (forM_)
 > import Control.Monad.ST
@@ -33,7 +33,7 @@
 
 
 > fibVector :: Int -> Int
-> fibVector n = deepseq fs (fs `V.unsafeIndex` n)
+> fibVector n = deepseq fs $ fs `V.unsafeIndex` n
 >     where
 >       fs = V.generate (n+1) $ \i -> case i of
 >                                0 -> 1
@@ -42,10 +42,16 @@
 
 
 > fibIntmap :: Int -> Int
-> fibIntmap n = deepseq fs (fs I.! n)
+> fibIntmap n = fs `deepseq` fs I.! n
 >     where
->       fs = foldr (\i -> insert i $ fs I.! (i-1) + fs I.! (i-2))
->                  (insert 1 1 $ insert 1 0 empty) [2..]
+>       fs = foldr (\i -> case i of 
+>                           0 -> insert 0 1
+>                           1 -> insert 1 1
+>                           _ -> insert i $ fs I.! (i-1) + fs I.! (i-2))
+>            empty [0..n]
+
+
+
 
 > fibUVector :: Int -> Int
 > fibUVector n = (U.! n) $ runST $ do
@@ -67,7 +73,7 @@
 >       myConfig = defaultConfig {cfgPerformGC = ljust True}
 >   defaultMainWith myConfig (return ()) [
 >         bench ("fib List " ++ show n) $ whnf fibList n,
->         -- bench ("fib IntMap " ++ show n) $ whnf fibIntmap n,
+>         -- bench ("fib IntMap " ++ show n) $ whnf fibIntmap n, -- Stack Overflow
 >         bench ("fib Vector " ++ show n) $ whnf fibVector n,
 >         bench ("fib UVector " ++ show n) $ whnf fibUVector n,
 >         bench ("fib C " ++ show n) $ whnf c_fib (fromIntegral n)
