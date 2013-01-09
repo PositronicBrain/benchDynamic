@@ -21,10 +21,13 @@
 > import qualified Data.Map.Strict as M
 
 
-> import qualified Data.Vector as V (generate,unsafeIndex)
+> import qualified Data.Vector as V ((!),generate,unsafeIndex)
+> import qualified Data.Vector.Mutable as VM (unsafeRead,new,unsafeWrite)
 > import           Data.Vector.Generic (unsafeFreeze)
-> import           Data.Vector.Unboxed.Mutable (unsafeRead,new,unsafeWrite)
+> import qualified Data.Vector.Unboxed.Mutable as UM (unsafeRead,new,unsafeWrite)
 > import qualified Data.Vector.Unboxed as U
+
+
 
 > import Foreign.C.Types
 
@@ -60,16 +63,29 @@
 >      {-# INLINE step #-}
 
 
+> fibMVector :: Int -> Int
+> fibMVector n = deepseq fs $ fs `V.unsafeIndex` n
+>     where
+>       fs = runST $ do
+>              v <- VM.new $ n+1
+>              VM.unsafeWrite v 0 1
+>              VM.unsafeWrite v 1 1
+>              forM_ [2..n] $ \i -> do
+>                  a <- VM.unsafeRead v $ i-1
+>                  b <- VM.unsafeRead v $ i-2
+>                  VM.unsafeWrite v i $ a+b
+>              unsafeFreeze v
 
-> fibUVector :: Int -> Int
-> fibUVector n = (U.! n) $ runST $ do
->   fs <- new $ n+1
->   unsafeWrite fs 0 1
->   unsafeWrite fs 1 1
+
+> fibMUVector :: Int -> Int
+> fibMUVector n = (U.! n) $ runST $ do
+>   fs <- UM.new $ n+1
+>   UM.unsafeWrite fs 0 1
+>   UM.unsafeWrite fs 1 1
 >   forM_ [2..n] $ \i -> do
->       a <- unsafeRead fs $ i-1
->       b <- unsafeRead fs $ i-2
->       unsafeWrite fs i $ a+b
+>       a <- UM.unsafeRead fs $ i-1
+>       b <- UM.unsafeRead fs $ i-2
+>       UM.unsafeWrite fs i $ a+b
 >   unsafeFreeze fs
 
 
@@ -83,7 +99,8 @@
 >         bench ("fib List " ++ show n) $ whnf fibList n,
 >         bench ("fib Data.IntMap " ++ show n) $ whnf fibIntmap n,
 >         bench ("fib Data.Map " ++ show n) $ whnf fibMap n,
->         bench ("fib Data.Vector (boxed)" ++ show n) $ whnf fibVector n,
->         bench ("fib Mutable UVector " ++ show n) $ whnf fibUVector n,
+>         bench ("fib Data.Vector (boxed) " ++ show n) $ whnf fibVector n,
+>         bench ("fib Mutable UVector " ++ show n) $ whnf fibMUVector n,
+>         bench ("fib Mutable Vector " ++ show n) $ whnf fibMVector n,
 >         bench ("fib C " ++ show n) $ whnf c_fib (fromIntegral n)
 >         ]
